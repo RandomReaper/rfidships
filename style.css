@@ -2,6 +2,16 @@ body {
   color: white;
   background-color: black;
   font-family: monospace;
+  font-size: 3vw;
+}
+
+table {
+  width: 100%;
+}
+
+th {
+  text-align: left;
+  width: 50%;
 }
 
 .running {
