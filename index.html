@@ -2,9 +2,8 @@
 
 <html>
    <head>
-
-      <script type = "text/javascript">
-        // ✅ Or create a reusable function
+     <link rel="stylesheet" href="style.css">
+<script type = "text/javascript">
 function padTo2Digits(num) {
   return num.toString().padStart(2, '0');
 }
@@ -24,77 +23,94 @@ function convertMsToTime(milliseconds) {
 
   return `${padTo2Digits(minutes)}:${padTo2Digits(seconds)}.${padTo2Digits(cs)}`;
 }
-        let list = new Map();
+let list = new Map();
 
-        function stop(key) {
-          list.get(key).stop=Date.now();
+function stop(key) {
+  list.get(key).stop=Date.now();
+}
+
+function Start() {
+
+  if ("WebSocket" in window) {
+     var ws = new WebSocket("ws://localhost:1234/");
+
+     ws.onopen = function() {
+     };
+
+     ws.onmessage = function (evt) {
+        let r = JSON.parse(evt.data);
+        let now = Date.now()
+        let o = {
+          nr : r.tag,
+          start : now,
+          stop : now
+        }
+        list.set(r.tag, o)
+     };
+
+     ws.onclose = function() {
+        console.log("Connection is closed (departure)...");
+     };
+  }
+
+  if ("WebSocket" in window) {
+     var ws = new WebSocket("ws://localhost:1235/");
+
+     ws.onopen = function() {
+     };
+
+     ws.onmessage = function (evt) {
+        let r = JSON.parse(evt.data);
+        let now = Date.now()
+        if (list.has(r.tag)) {
+          if (list.get(r.tag).start == list.get(r.tag).stop) {
+            list.get(r.tag).stop = now
+          }
+        }
+     };
+
+     ws.onclose = function() {
+        console.log("Connection is closed (arrival)...");
+     };
+  }
+
+  setInterval(function() {
+
+    let a = "<table><tr><th>tag</th><th>time</th></tr>"
+    let now = Date.now()
+    let list1 = new Map();
+    for (const [key, value] of list.entries()) {
+      list1.set(key, value.stop > value.start ? value.stop-value.start : now-value.start)
+    }
+    list1 = new Map([...list1.entries()].sort((a, b) => a[1] - b[1]));
+    for (const [key, value] of list1.entries()) {
+        if (list.get(key).start == list.get(key).stop) {
+          a+="<tr class=\"running\">"
+        }
+        else {
+          a+="<tr>"
         }
 
-         function WebSocketTest() {
+        a+="<td>"+key+"</td>"
+        a+="<td><div>"+convertMsToTime(value)+"<div></td>"
+        //a+='<td><button onclick="stop(\''+key+'\');">stop</button></td>'
+        a+="</tr>"
+      }
 
-            if ("WebSocket" in window) {
-               console.log("WebSocket is supported by your Browser!");
+    a += "</table>"
+    document.getElementById('log').innerHTML = a
 
-               // Let us open a web socket
-               var ws = new WebSocket("ws://localhost:1234/");
-
-               ws.onopen = function() {
-               };
-
-               ws.onmessage = function (evt) {
-                  let r = JSON.parse(evt.data);
-                  let now = Date.now()
-                  let o = {
-                    nr : r.tag,
-                    start : now,
-                    stop : now
-                  }
-                  list.set(r.tag, o)
-               };
-
-               ws.onclose = function() {
-
-                  // websocket is closed.
-                  console.log("Connection is closed...");
-               };
-            } else {
-
-               // The browser doesn't support WebSocket
-               console.log("WebSocket NOT supported by your Browser!");
-            }
-
-
-            setInterval(function() {
-
-              let a = "<table><tr><th>tag</th><th>time</th></tr>"
-              let now = Date.now()
-              let list1 = new Map();
-              for (const [key, value] of list.entries()) {
-                list1.set(key, value.stop > value.start ? value.stop-value.start : now-value.start)
-              }
-              list1 = new Map([...list1.entries()].sort((a, b) => a[1] - b[1]));
-              for (const [key, value] of list1.entries()) {
-                  a+="<tr>"
-                  a+="<td>"+key+"</td>"
-                  a+="<td>"+convertMsToTime(value)+"</td>"
-                  a+='<td><button onclick="stop(\''+key+'\');">stop</button></td>'
-                  a+="</tr>"
-                }
-
-              a += "</table>"
-              document.getElementById('log').innerHTML = a
-
-              // remove
-              list = new Map([...list].filter(([k,v]) => v.start == v.stop || now < v.stop + 2*60*1000 ))
-
-            }, 50);
-
-         }
-      </script>
-
-   </head>
-
-   <body onload="WebSocketTest()">
-     <div id="log">initial content</div>
-   </body>
+    // remove
+    list = new Map([...list].filter(([k,v]) =>
+      (v.start == v.stop && now < v.stop + 2*60*1000)
+      || now < v.stop + 2*60*1000
+    ))
+  }, 50);
+}
+</script>
+</head>
+<body onload="Start()">
+  <img src="img/EN_HEI_neg.png" width="30%">
+  <div id="log">initial content</div>
+</body>
 </html>

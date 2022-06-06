@@ -1,0 +1,9 @@
+body {
+  color: white;
+  background-color: black;
+  font-family: monospace;
+}
+
+.running {
+  color: #db0066
+}
