@@ -53,6 +53,7 @@ function Start() {
      var ws = new WebSocket("ws://localhost:1234/");
 
      ws.onopen = function() {
+       document.getElementById('c1').innerHTML='';
      };
 
      ws.onmessage = function (evt) {
@@ -68,7 +69,8 @@ function Start() {
      };
 
      ws.onclose = function() {
-        console.log("Connection is closed (departure)...");
+       document.getElementById('c1').innerHTML='ws1 not connected'
+       console.log("Connection is closed (departure)...");
      };
   }
 
@@ -76,9 +78,11 @@ function Start() {
      var ws = new WebSocket("ws://localhost:1235/");
 
      ws.onopen = function() {
+       document.getElementById('c2').innerHTML='';
      };
 
      ws.onmessage = function (evt) {
+
         let r = JSON.parse(evt.data);
         let now = Date.now()
         if (list.has(r.tag)) {
@@ -89,6 +93,7 @@ function Start() {
      };
 
      ws.onclose = function() {
+        document.getElementById('c2').innerHTML='ws2 not connected'
         console.log("Connection is closed (arrival)...");
      };
   }
@@ -131,6 +136,8 @@ function Start() {
 </head>
 <body onload="Start()">
   <img src="img/EN_HEI_neg.png" width="30%">
+  <div id=c1>ws1 not connected</div>
+  <div id=c2>ws2 not connected</div>
   <div id="log">initial content</div>
 </body>
 </html>
