@@ -4,6 +4,24 @@
    <head>
      <link rel="stylesheet" href="style.css">
 <script type = "text/javascript">
+function hex2a(hexx) {
+  var hex = hexx.toString();
+  var str = '';
+  for (var i = 0; i < hex.length; i += 2)
+      str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+  return str;
+}
+function name(tag) {
+  var h = hex2a(tag)
+  if (tag.toString().startsWith("E280")) {
+    return tag;
+  }
+  if (h.startsWith("hessopalp")) {
+    return h.substring(9).replaceAll("0", "&nbsp;")
+  }
+
+  return h;
+}
 function padTo2Digits(num) {
   return num.toString().padStart(2, '0');
 }
@@ -42,6 +60,7 @@ function Start() {
         let now = Date.now()
         let o = {
           nr : r.tag,
+          name : name(r.tag),
           start : now,
           stop : now
         }
@@ -80,19 +99,20 @@ function Start() {
     let now = Date.now()
     let list1 = new Map();
     for (const [key, value] of list.entries()) {
-      list1.set(key, value.stop > value.start ? value.stop-value.start : now-value.start)
+      let o = {time : value.stop > value.start ? value.stop-value.start : now-value.start, name:value.name}
+      list1.set(key, o)
     }
-    list1 = new Map([...list1.entries()].sort((a, b) => a[1] - b[1]));
-    for (const [key, value] of list1.entries()) {
-        if (list.get(key).start == list.get(key).stop) {
+    list1 = new Map([...list1.entries()].sort((a, b) => a[1].time - b[1].time));
+    for (const [k, v] of list1.entries()) {
+        if (list.get(k).start == list.get(k).stop) {
           a+="<tr class=\"running\">"
         }
         else {
           a+="<tr>"
         }
 
-        a+="<td>"+key+"</td>"
-        a+="<td><div>"+convertMsToTime(value)+"<div></td>"
+        a+="<td>"+v.name+"</td>"
+        a+="<td><div>"+convertMsToTime(v.time)+"<div></td>"
         //a+='<td><button onclick="stop(\''+key+'\');">stop</button></td>'
         a+="</tr>"
       }
