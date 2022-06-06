@@ -5,6 +5,7 @@ import json
 import signal
 import asyncio
 import websockets
+import sys
 
 from datetime import datetime
 
@@ -27,10 +28,10 @@ def p(tag):
 def signal_handler(sig, frame):
     pass
 
-reader = mercury.Reader("tmr:///dev/ttyUSB1")
+reader = mercury.Reader("tmr://"+sys.argv[1])
 
 reader.set_region("EU3")
-reader.set_read_plan(antennas=[1], protocol="GEN2", bank=["epc"], read_power=2000)
+reader.set_read_plan(antennas=[1], protocol="GEN2", bank=["epc"], read_power=1000)
 
 
 
@@ -53,7 +54,13 @@ async def handler(websocket):
         await websocket.send(message)
 
 async def main():
-    async with websockets.serve(handler, "localhost", 8765):
-        await asyncio.Future()  # run forever
+    try:
+        async with websockets.serve(handler, "localhost", sys.argv[2]):
+            await asyncio.Future()  # run forever
+    except asyncio.CancelledError:
+        reader.stop_reading()
 
-asyncio.run(main())
+if (len(sys.argv)!=3):
+    print("args must be : serial_device port_number, example : ./test.py /dev/ttyUSB0 1234")
+else:
+    asyncio.run(main())
