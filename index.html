@@ -4,6 +4,10 @@
    <head>
      <link rel="stylesheet" href="style.css">
 <script type = "text/javascript">
+const STATE_STARTED = 0
+const STATE_STOPPED = 1
+const STATE_DNS     = 2
+
 function hex2a(hexx) {
   var hex = hexx.toString();
   var str = '';
@@ -62,6 +66,7 @@ function Start() {
         let o = {
           nr : r.tag,
           name : name(r.tag),
+          state : STATE_STARTED,
           start : now,
           stop : now
         }
@@ -86,9 +91,20 @@ function Start() {
         let r = JSON.parse(evt.data);
         let now = Date.now()
         if (list.has(r.tag)) {
-          if (list.get(r.tag).start == list.get(r.tag).stop) {
+          if (list.get(r.tag).state == STATE_STARTED) {
+            list.get(r.tag).state = STATE_STOPPED
             list.get(r.tag).stop = now
           }
+        }
+        else {
+            let o = {
+              nr : r.tag,
+              name : name(r.tag),
+              state : STATE_DNS,
+              start : now,
+              stop : now
+            }
+            list.set(r.tag, o)
         }
      };
 
@@ -107,19 +123,29 @@ function Start() {
       let o = {time : value.stop > value.start ? value.stop-value.start : now-value.start, name:value.name}
       list1.set(key, o)
     }
-    list1 = new Map([...list1.entries()].sort((a, b) => a[1].time - b[1].time));
+    //list1 = new Map([...list1.entries()].sort((a, b) => a[1].time - b[1].time));
     for (const [k, v] of list1.entries()) {
-        if (list.get(k).start == list.get(k).stop) {
-          a+="<tr class=\"running\">"
+        switch (list.get(k).state) {
+            case STATE_STARTED:
+                a+="<tr class=\"running\">"
+                a+="<td>"+v.name+"</td>"
+                a+="<td><div>"+convertMsToTime(v.time)+"<div></td>"
+                a+="</tr>"
+            break;
+            case STATE_STOPPED:
+                a+="<tr class=\"stopped\">"
+                a+="<td>"+v.name+"</td>"
+                a+="<td><div>"+convertMsToTime(v.time)+"<div></td>"
+                a+="</tr>"
+            break;
+            case STATE_DNS:
+            default:
+                a+="<tr class=\"dns\">"
+                a+="<td>"+v.name+"</td>"
+                a+="<td>identifié</td>"
+                a+="</tr>"
+            break;
         }
-        else {
-          a+="<tr>"
-        }
-
-        a+="<td>"+v.name+"</td>"
-        a+="<td><div>"+convertMsToTime(v.time)+"<div></td>"
-        //a+='<td><button onclick="stop(\''+key+'\');">stop</button></td>'
-        a+="</tr>"
       }
 
     a += "</table>"
@@ -127,8 +153,9 @@ function Start() {
 
     // remove
     list = new Map([...list].filter(([k,v]) =>
-      (v.start == v.stop && now < v.stop + 2*60*1000)
-      || now < v.stop + 2*60*1000
+      (v.state == STATE_STARTED && now < v.stop + 2*60*1000)
+      || (v.state == STATE_STOPPED && now < v.stop + 2*60*1000)
+      || (v.state == STATE_DNS && now < v.stop + 10*1000)
     ))
   }, 50);
 }
