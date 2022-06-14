@@ -55,7 +55,7 @@ async def handler(websocket):
 
 async def main():
     try:
-        async with websockets.serve(handler, "localhost", sys.argv[2]):
+        async with websockets.serve(handler, "0.0.0.0", sys.argv[2]):
             await asyncio.Future()  # run forever
     except asyncio.CancelledError:
         reader.stop_reading()
