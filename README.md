@@ -1,2 +1,2 @@
 # rfidships
-pip install python-mercuryapi
+pip install python-mercuryapi websockets 
